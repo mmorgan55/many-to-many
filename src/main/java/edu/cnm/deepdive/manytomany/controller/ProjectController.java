@@ -60,11 +60,16 @@ public class ProjectController {
   public void delete(@PathVariable("projectId") long projectId) {
     Project project = get(projectId);
     List<Student> students = project.getStudents();
-    for(Student student : students) {
+    for (Student student : students) {
       student.getProjects().remove(project);
     }
     studentRepository.saveAll(students);
     projectRepository.delete(project);
+  }
+
+  @GetMapping("{projectId}/students")
+  public List<Student> studentList (@PathVariable("projectId") long projectId) {
+    return get(projectId).getStudents();
   }
 
   @PostMapping(value = "{projectId}/students", consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -77,6 +82,19 @@ public class ProjectController {
     studentRepository.save(student);
     return ResponseEntity.created(project.getHref()).body(project);
 
+  }
+
+  @DeleteMapping(value = "{projectId}/students/{studentId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void deleteStudent(@PathVariable("projectId") long projectId,
+      @PathVariable("studentId") long studentId) {
+    Project project = get(projectId);
+    Student student = studentRepository.findById(studentId).get();
+    if (project.getStudents().remove(student)){
+      projectRepository.save(project);
+    }else{
+      throw new NoSuchElementException();
+    }
   }
 
   @ResponseStatus(value = HttpStatus.NOT_FOUND, reason = "Resource not found.")
